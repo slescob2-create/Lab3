@@ -2,84 +2,69 @@
 addi $t0, $zero, 1
 sw   $t0, 0($s2)
 
-# P currently contains one element
+# k = 1
 addi $s3, $zero, 1
 
-# i = 1
-addi $t1, $zero, 1
-
+# j = 1
+addi $t0, $zero, 1
 
 loop:
-    # Check if i < n
-    slt  $t2, $t1, $s1
-    beq  $t2, $zero, done
+# Stop when j >= n
+slt  $t1, $t0, $s1
+beq  $t1, $zero, done
 
-    # Get address of A[i]
-    sll  $t3, $t1, 2
-    add  $t4, $s0, $t3
+# Get A[j]
+sll  $t2, $t0, 2
+add  $t2, $s0, $t2
+lw   $a0, 0($t2)
 
-    # Load A[i]
-    lw   $a0, 0($t4)
+# Call power(A[j], j)
+add  $a1, $t0, $zero
+jal  power
 
-    # Second argument is index i
-    add  $a1, $t1, $zero
+# Call newElement(P, k, pow)
+add  $a0, $s2, $zero
+add  $a1, $s3, $zero
+add  $a2, $v0, $zero
+jal  newElement
 
-    # Find A[i]^i
-    jal  power
+# k++
+addi $s3, $s3, 1
 
-    # Arguments for newElement
-    add  $a0, $s2, $zero
-    add  $a1, $s3, $zero
-    add  $a2, $v0, $zero
+# j++
+addi $t0, $t0, 1
 
-    # Store result in P
-    jal  newElement
-
-    # k++
-    addi $s3, $s3, 1
-
-    # i++
-    addi $t1, $t1, 1
-
-    j loop
+j loop
 
 
+# power(a, b)
+# Returns a^b in $v0
 power:
-    # result = 1
-    addi $v0, $zero, 1
+add  $v0, $a0, $zero
+addi $t3, $zero, 1
 
-    # counter = 0
-    add  $t5, $zero, $zero
+power_loop:
+slt  $t4, $t3, $a1
+beq  $t4, $zero, power_done
 
-powerLoop:
-    # Check counter < index
-    slt  $t6, $t5, $a1
-    beq  $t6, $zero, powerDone
+mult $v0, $a0
+mflo $v0
 
-    # result = result * element
-    mult $v0, $a0
-    mflo $v0
+addi $t3, $t3, 1
+j power_loop
 
-    # counter++
-    addi $t5, $t5, 1
-
-    j powerLoop
-
-powerDone:
-    jr $ra
+power_done:
+jr $ra
 
 
+# newElement(P, k, pow)
+# Stores pow into P[k]
 newElement:
-    # Offset = k * 4
-    sll  $t7, $a1, 2
+sll  $t3, $a1, 2
+add  $t3, $a0, $t3
+sw   $a2, 0($t3)
 
-    # Address of P[k]
-    add  $t8, $a0, $t7
-
-    # P[k] = new element
-    sw   $a2, 0($t8)
-
-    jr $ra
+jr $ra
 
 
 done:
